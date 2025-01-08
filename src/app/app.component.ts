@@ -1,6 +1,5 @@
 import {Component, OnInit} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { CourseComponent } from './course/course.component';
 import { HttpClient } from '@angular/common/http';
 import {HelloWorldService} from './hello-world.service';
 
@@ -9,7 +8,6 @@ import {HelloWorldService} from './hello-world.service';
   standalone: true,
   imports: [
     RouterOutlet,
-    CourseComponent
   ],
   providers: [HelloWorldService],
   templateUrl: './app.component.html',

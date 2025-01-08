@@ -10,17 +10,20 @@
             </div>
             <div class="card-footer d-flex justify-content-between">
                 <small class="text-muted">{{ post.date }}</small>
-                <small class="text-muted">Created By: <a (click)="Friend(post.username)" title="Friend {{ post.username }}">{{ post.username }}</a></small>
+                <small class="text-muted">Created By: 
+                    <a *ngIf="user != post.username" (click)="AddFriend(post.username)" title="Friend {{ post.username }}" class="friend-link">{{ post.username }}</a>
+                    <a *ngIf="user == post.username">{{ post.username }}</a>
+                </small>
             </div>
         </div>
     </div>
     }
 </div>
-<p>End</p>
 
 <!-- For friending other people
-match (u:User {username: "admin"}), (p:User {username: "jesse"})
-create (u) -[f:Friend]-> (p) return p, u, f -->
+match (u:User {username: "jesse"}), (p:User {username: "admin"})
+where not (u)--(p) and u <> p
+create (u) -[f:Friend]-> (p) -->
 
 <!-- For Seeing friends
 match (u:User {username: "jesse"}) -[:Friend]- (p:User) return p -->

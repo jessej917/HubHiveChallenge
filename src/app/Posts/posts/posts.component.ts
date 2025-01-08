@@ -1,7 +1,7 @@
-import {Component, OnInit} from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import {environment} from '../../../environments/environment';
+import { environment } from '../../../environments/environment';
 import { Router } from '@angular/router';
 import { HelloWorldService } from '../../hello-world.service';
 import { AuthService } from '../../Services/auth.service';
@@ -19,6 +19,7 @@ import { NgIf } from '@angular/common';
 export class PostsComponent implements OnInit {
   posts: any[] = [];
   postObj: Post;
+  user: any;
 
   constructor(private http: HttpClient, private router: Router, private hw: HelloWorldService, private AS: AuthService) {
     this.postObj = new Post();
@@ -27,6 +28,7 @@ export class PostsComponent implements OnInit {
   ngOnInit() {
 
     console.log(this.AS.getUser());
+    this.user = this.AS.getUser();
 
     this.hw.getPosts().subscribe(data => {
       this.posts = data;
@@ -37,8 +39,8 @@ export class PostsComponent implements OnInit {
 
   CreatePost() {
     let json = JSON.stringify(this.postObj)
-    this.http.post(environment.serverUrl + '/createPost', json).subscribe((res:any)=>{
-      if(res.result) {
+    this.http.post(environment.serverUrl + '/createPost', json).subscribe((res: any) => {
+      if (res.result) {
         alert("Created Post Successfully")
         this.AS.setUser(this.postObj.Title);
         this.router.navigateByUrl('/dashboard')
@@ -48,21 +50,22 @@ export class PostsComponent implements OnInit {
     })
   }
 
-  Friend(friend: string) {
-    const person: Friend = {
+  AddFriend(friend: string) {
+    let person: Friend = {
       Username: this.AS.getUser(),
       Friend: friend
     };
-    let json = JSON.stringify(this.postObj)
-    this.http.post(environment.serverUrl + '/createPost', json).subscribe((res:any)=>{
-      if(res.result) {
-        alert("Created Post Successfully")
-        this.AS.setUser(this.postObj.Title);
-        this.router.navigateByUrl('/dashboard')
-      } else {
-        alert(res.message)
-      }
-    })
+    if (person.Friend != person.Username) {
+      let json = JSON.stringify(person)
+      this.http.post(environment.serverUrl + '/addFriend', json).subscribe((res: any) => {
+        if (res.result) {
+          alert("Friended " + friend)
+          //this.router.navigateByUrl('/dashboard')
+        } else {
+          alert(res.message)
+        }
+      })
+    }
   }
 
 }
@@ -88,6 +91,6 @@ export class Friend {
   constructor() {
     this.Username = '';
     this.Friend = '';
-    
+
   }
 }

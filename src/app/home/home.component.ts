@@ -1,5 +1,4 @@
 import {Component, OnInit} from '@angular/core';
-import { CourseComponent } from '../course/course.component';
 import {HelloWorldService} from '../hello-world.service';
 import { Router, RouterOutlet } from '@angular/router';
 import { AuthService } from '../Services/auth.service';

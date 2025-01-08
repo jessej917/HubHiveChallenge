@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import {environment} from '../environments/environment';
 
 @Injectable()
@@ -11,8 +11,10 @@ export class HelloWorldService {
     return this.http.get<any[]>('https://jsonplaceholder.typicode.com/todos');
   }
 
-  getTitle() {
-    return this.http.get<any[]>(environment.serverUrl + '/getUsers');
+  getFriends(user:any) {
+    const params = new HttpParams()
+      .set('username', user)
+    return this.http.get<any[]>(environment.serverUrl + '/getFriends', { params });
   }
 
   getPosts() {

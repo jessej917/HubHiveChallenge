@@ -46,8 +46,8 @@ export class UploadPostComponent {
 
   onUpload() {
     debugger;
+    this.postObj.Username = this.AS.getUser();
     if (this.file) {
-      this.postObj.Username = this.AS.getUser();
       this.FUS.uploadFile(this.file).subscribe((res: any) => {
           // Short link via api response
           this.postObj.Image = res;

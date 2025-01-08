@@ -162,13 +162,13 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 		// Use the err
 		if err == nil {
 			result = LoginResult{
-				Message: "Register successful!",
+				Message: "Created successful!",
 				Result:  true,
 			}
 			fmt.Println("Success!!")
 		} else {
 			result = LoginResult{
-				Message: "Register failed",
+				Message: "Creation failed",
 				Result:  false,
 			}
 			fmt.Println("Fail!!")
@@ -176,6 +176,7 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	} else {
 		if len(postReq.Username) < 4 {
+			fmt.Println(postReq.Username)
 			result = LoginResult{
 				Message: "Username must be at least 4 characters!",
 				Result:  false,
@@ -423,19 +424,19 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 func GetFriends(w http.ResponseWriter, r *http.Request) {
 
-	var postReq PostRequest
+	var username string = r.URL.Query().Get("username")
+	fmt.Println("TEST")
+	fmt.Println(username)
 
 	// Decode the JSON body into the LoginRequest struct
-	err := json.NewDecoder(r.Body).Decode(&postReq)
-	fmt.Println(postReq)
-	fmt.Println(err)
-	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
-	var result LoginResult
+	// err := json.NewDecoder(r.Body).Decode(&username)
+	// fmt.Println(username)
+	// fmt.Println(err)
+	// if err != nil {
+	// 	http.Error(w, "Invalid request payload", http.StatusBadRequest)
+	// 	return
+	// }
+	// defer r.Body.Close()
 
 	//Create User in database
 	fmt.Println("Connecting to Database from GetFriends...")
@@ -444,14 +445,9 @@ func GetFriends(w http.ResponseWriter, r *http.Request) {
 
 	// Create a post based on the given user and post information
 	databaseResult, err := neo4j.ExecuteQuery(ctx, driver,
-		`MATCH (p:User)
-		WHERE p.username = $username
-		CREATE (p) -[:CREATED {date: datetime()}]-> (post:Post {title: $title, body: $body, image: $image})`,
+		`match (u:User {username: $username}) -[:Friend]- (p:User) return p.username as username`,
 		map[string]any{
-			"username": postReq.Username,
-			"title":    postReq.Title,
-			"body":     postReq.Body,
-			"image":    postReq.Image,
+			"username": username,
 		}, neo4j.EagerResultTransformer,
 		neo4j.ExecuteQueryWithDatabase("neo4j"))
 
@@ -464,37 +460,26 @@ func GetFriends(w http.ResponseWriter, r *http.Request) {
 		summary.Counters().NodesCreated(),
 		summary.ResultAvailableAfter())
 
-	// Use the err
-	if err == nil {
-		result = LoginResult{
-			Message: "Register successful!",
-			Result:  true,
-		}
-		fmt.Println("Success!!")
-	} else {
-		result = LoginResult{
-			Message: "Register failed",
-			Result:  false,
-		}
-		fmt.Println("Fail!!")
+	posts := []any{}
+	//listTest := []any{}
+
+	// Loop through results and do something with them
+	for _, record := range databaseResult.Records {
+		fmt.Println(record.AsMap())
+		fmt.Println(record.AsMap()["username"])
+
+		posts = append(posts, record.AsMap()["username"])
+		//listTest = append(listTest, record.AsMap()["username"])
 	}
 
-	fmt.Println(result)
-	fmt.Println(result.Result)
-
-	jsonBytes, err := json.Marshal(result)
+	jsonBytes, err := utils.StructToJSON(posts)
 	if err != nil {
-		log.Println("Error marshalling JSON:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		fmt.Print(err)
 	}
 
-	// Print JSON to server logs
-	log.Println("JSON response:", string(jsonBytes))
-
-	// Write the JSON response
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonBytes)
+	return
 }
 
 func AddFriend(w http.ResponseWriter, r *http.Request) {
@@ -519,7 +504,8 @@ func AddFriend(w http.ResponseWriter, r *http.Request) {
 
 	result, err := neo4j.ExecuteQuery(ctx, driver,
 		`match (u:User {username: $username}), (p:User {username: $friend})
-		create (u) -[f:Friend]-> (p) return p as friend, u as username`,
+		where not (u)--(p) and u <> p
+		create (u) -[f:Friend]-> (p)`,
 		map[string]any{
 			"username": friendReq.Username,
 			"friend":   friendReq.Friend,
