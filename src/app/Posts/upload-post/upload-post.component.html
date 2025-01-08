@@ -14,7 +14,7 @@
           </div>
           <div class="mb-3">
             <label class="form-label" for="image">Image:</label>
-            <input type="file" class="form-control" id="image" (change)="onChange($event)">
+            <input type="file" class="form-control" id="image" (change)="onChange($event)" enctype="multipart/form-data">
             <img class="upload" src={{url}} onerror='this.src="https://adaptcommunitynetwork.org/wp-content/uploads/2022/01/ef3-placeholder-image.jpg";'>
           </div>
           <button type="submit" class="btn btn-primary" (click)="onUpload()">Submit</button>

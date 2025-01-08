@@ -1,18 +1,26 @@
 <app-upload-post></app-upload-post>
-<div class="row row-cols-1 row-cols-md-3 g-4">
+<div class="row row-cols-1 row-cols-md-3 g-4" style="margin: 0;">
     @for (post of posts; track post) {
     <div class="col">
         <div class="card h-100">
-            <img src={{post.image}} class="card-img-top" alt="...">
+            <img *ngIf="post.image != ''" src="http://localhost:4201/{{post.image}}" class="card-img-top" alt="...">
             <div class="card-body">
                 <h5 class="card-title">{{ post.title }}</h5>
                 <p class="card-text">{{ post.body }}</p>
             </div>
-            <div class="card-footer">
+            <div class="card-footer d-flex justify-content-between">
                 <small class="text-muted">{{ post.date }}</small>
+                <small class="text-muted">Created By: <a (click)="Friend(post.username)" title="Friend {{ post.username }}">{{ post.username }}</a></small>
             </div>
         </div>
     </div>
     }
 </div>
 <p>End</p>
+
+<!-- For friending other people
+match (u:User {username: "admin"}), (p:User {username: "jesse"})
+create (u) -[f:Friend]-> (p) return p, u, f -->
+
+<!-- For Seeing friends
+match (u:User {username: "jesse"}) -[:Friend]- (p:User) return p -->

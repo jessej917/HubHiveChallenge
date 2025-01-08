@@ -48,17 +48,15 @@ export class UploadPostComponent {
     debugger;
     if (this.file) {
       this.postObj.Username = this.AS.getUser();
-      this.FUS.uploadFile(this.file).subscribe(
-        (event: any) => {
-          if (typeof (event) === 'object') {
+      this.FUS.uploadFile(this.file).subscribe((res: any) => {
+          // Short link via api response
+          this.postObj.Image = res;
 
-            // Short link via api response
-            this.postObj.Image = event.link;
-
-            this.WriteToDatabase();
-          }
+          this.WriteToDatabase();
         }
       );
+    } else {
+      this.WriteToDatabase();
     }
   }
 

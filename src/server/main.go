@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"go_project/src/server/utils"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -16,13 +17,28 @@ import (
 )
 
 func main() {
+
+	// Ensure the "uploads" directory exists
+	if _, err := os.Stat("./uploads"); os.IsNotExist(err) {
+		err := os.Mkdir("./uploads", os.ModePerm)
+		if err != nil {
+			log.Fatal("Error creating uploads directory:", err)
+		}
+	}
+
 	r := mux.NewRouter()
+
+	// Serve static files from the "uploads" directory
+	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
 
 	r.HandleFunc("/getUsers", GetUsers)
 	r.HandleFunc("/getPosts", GetPosts)
+	r.HandleFunc("/getFriends", GetFriends)
 	r.HandleFunc("/createUser", CreateUser).Methods("POST", "OPTIONS")
 	r.HandleFunc("/createPost", CreatePost).Methods("POST", "OPTIONS")
+	r.HandleFunc("/addFriend", AddFriend).Methods("POST", "OPTIONS")
 	r.HandleFunc("/login", Login).Methods("POST", "OPTIONS")
+	r.HandleFunc("/uploadImage", UploadImage).Methods("POST", "OPTIONS")
 
 	// Solves Cross Origin Access Issue
 	c := cors.New(cors.Options{
@@ -195,6 +211,77 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonBytes)
 }
 
+func UploadImage(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Println("Uploading Image...")
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse the multipart form with a maximum memory size (e.g., 10MB)
+	err := r.ParseMultipartForm(10 << 20) // 10MB
+	if err != nil {
+		http.Error(w, "Unable to parse form data", http.StatusBadRequest)
+		log.Println("Error parsing form data:", err)
+		return
+	}
+
+	// Retrieve the file from the form data
+	file, fileHeader, err := r.FormFile("image")
+	if err != nil {
+		http.Error(w, "Unable to retrieve file from form data", http.StatusBadRequest)
+		log.Println("Error retrieving file:", err)
+		return
+	}
+	defer file.Close()
+
+	// Create a new file on the server to save the uploaded file
+	dst, err := os.Create("./uploads/" + fileHeader.Filename)
+	if err != nil {
+		http.Error(w, "Unable to save the file", http.StatusInternalServerError)
+		log.Println("Error saving file:", err)
+		return
+	}
+	defer dst.Close()
+
+	// Copy the file's content to the new file
+	_, err = io.Copy(dst, file)
+	if err != nil {
+		http.Error(w, "Error saving file", http.StatusInternalServerError)
+		log.Println("Error copying file content:", err)
+		return
+	}
+
+	log.Println("working?")
+
+	fmt.Println(fileHeader.Filename)
+
+	// Respond to the client
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "%s", "uploads/"+fileHeader.Filename)
+	// var result = LoginResult{
+	// 	Message: fileHeader.Filename,
+	// 	Result:  false,
+	// }
+
+	// jsonBytes, err := json.Marshal(result)
+	// if err != nil {
+	// 	log.Println("Error marshalling JSON:", err)
+	// 	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// // Print JSON to server logs
+	// log.Println("JSON response:", string(jsonBytes))
+
+	// // Write the JSON response
+	// w.Header().Set("Content-Type", "application/json")
+	// w.Write(jsonBytes)
+}
+
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Connecting to Database from GetUsers...")
@@ -334,6 +421,152 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonBytes)
 }
 
+func GetFriends(w http.ResponseWriter, r *http.Request) {
+
+	var postReq PostRequest
+
+	// Decode the JSON body into the LoginRequest struct
+	err := json.NewDecoder(r.Body).Decode(&postReq)
+	fmt.Println(postReq)
+	fmt.Println(err)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	var result LoginResult
+
+	//Create User in database
+	fmt.Println("Connecting to Database from GetFriends...")
+	ctx, driver := ConnectToDatabase()
+	defer driver.Close(ctx)
+
+	// Create a post based on the given user and post information
+	databaseResult, err := neo4j.ExecuteQuery(ctx, driver,
+		`MATCH (p:User)
+		WHERE p.username = $username
+		CREATE (p) -[:CREATED {date: datetime()}]-> (post:Post {title: $title, body: $body, image: $image})`,
+		map[string]any{
+			"username": postReq.Username,
+			"title":    postReq.Title,
+			"body":     postReq.Body,
+			"image":    postReq.Image,
+		}, neo4j.EagerResultTransformer,
+		neo4j.ExecuteQueryWithDatabase("neo4j"))
+
+	if err != nil {
+		panic(err)
+	}
+
+	summary := databaseResult.Summary
+	fmt.Printf("Created %v nodes in %+v.\n",
+		summary.Counters().NodesCreated(),
+		summary.ResultAvailableAfter())
+
+	// Use the err
+	if err == nil {
+		result = LoginResult{
+			Message: "Register successful!",
+			Result:  true,
+		}
+		fmt.Println("Success!!")
+	} else {
+		result = LoginResult{
+			Message: "Register failed",
+			Result:  false,
+		}
+		fmt.Println("Fail!!")
+	}
+
+	fmt.Println(result)
+	fmt.Println(result.Result)
+
+	jsonBytes, err := json.Marshal(result)
+	if err != nil {
+		log.Println("Error marshalling JSON:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Print JSON to server logs
+	log.Println("JSON response:", string(jsonBytes))
+
+	// Write the JSON response
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonBytes)
+}
+
+func AddFriend(w http.ResponseWriter, r *http.Request) {
+
+	var friendReq FriendRequest
+
+	// Decode the JSON body into the LoginRequest struct
+	err := json.NewDecoder(r.Body).Decode(&friendReq)
+	fmt.Println(friendReq)
+	fmt.Println(err)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	var loginResult LoginResult
+
+	fmt.Println("Connecting to Database from CreateUser...")
+	ctx, driver := ConnectToDatabase()
+	defer driver.Close(ctx)
+
+	result, err := neo4j.ExecuteQuery(ctx, driver,
+		`match (u:User {username: $username}), (p:User {username: $friend})
+		create (u) -[f:Friend]-> (p) return p as friend, u as username`,
+		map[string]any{
+			"username": friendReq.Username,
+			"friend":   friendReq.Friend,
+		}, neo4j.EagerResultTransformer,
+		neo4j.ExecuteQueryWithDatabase("neo4j"))
+	fmt.Println("test!")
+	if err != nil {
+		fmt.Println("Error: ")
+		//panic(err)
+	}
+
+	fmt.Println(result)
+
+	// Use the err
+	//var loginResult LoginResult
+	if err == nil {
+		loginResult = LoginResult{
+			Message: "Added Friend",
+			Result:  true,
+		}
+		fmt.Println("Success!!")
+	} else {
+		loginResult = LoginResult{
+			Message: "Error",
+			Result:  false,
+		}
+		fmt.Println("Fail!!")
+	}
+
+	fmt.Println(loginResult)
+	fmt.Println(loginResult.Result)
+
+	jsonBytes, err := json.Marshal(loginResult)
+	if err != nil {
+		log.Println("Error marshalling JSON:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Print JSON to server logs
+	log.Println("JSON response:", string(jsonBytes))
+
+	// Write the JSON response
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonBytes)
+}
+
 // TODO: Add security (salt, pepper, hash)
 func Login(w http.ResponseWriter, r *http.Request) {
 	var loginReq LoginRequest
@@ -426,6 +659,11 @@ type PostRequest struct {
 	Body     string `json:"body"`
 	Image    string `json:"image"`
 	Date     string `json:"date"`
+}
+
+type FriendRequest struct {
+	Username string `json:"username"`
+	Friend   string `json:"friend"`
 }
 
 type LoginRequest struct {

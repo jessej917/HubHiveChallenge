@@ -6,11 +6,12 @@ import { Router } from '@angular/router';
 import { HelloWorldService } from '../../hello-world.service';
 import { AuthService } from '../../Services/auth.service';
 import { UploadPostComponent } from '../upload-post/upload-post.component';
+import { NgIf } from '@angular/common';
 
 @Component({
   selector: 'app-posts',
   standalone: true,
-  imports: [FormsModule, UploadPostComponent],
+  imports: [NgIf, FormsModule, UploadPostComponent],
   providers: [HelloWorldService],
   templateUrl: './posts.component.html',
   styleUrl: './posts.component.css'
@@ -28,7 +29,6 @@ export class PostsComponent implements OnInit {
     console.log(this.AS.getUser());
 
     this.hw.getPosts().subscribe(data => {
-      debugger;
       this.posts = data;
     });
 
@@ -47,6 +47,24 @@ export class PostsComponent implements OnInit {
       }
     })
   }
+
+  Friend(friend: string) {
+    const person: Friend = {
+      Username: this.AS.getUser(),
+      Friend: friend
+    };
+    let json = JSON.stringify(this.postObj)
+    this.http.post(environment.serverUrl + '/createPost', json).subscribe((res:any)=>{
+      if(res.result) {
+        alert("Created Post Successfully")
+        this.AS.setUser(this.postObj.Title);
+        this.router.navigateByUrl('/dashboard')
+      } else {
+        alert(res.message)
+      }
+    })
+  }
+
 }
 
 export class Post {
@@ -61,5 +79,15 @@ export class Post {
     this.Body = '';
     this.Image = '';
     this.Date = '';
+  }
+}
+
+export class Friend {
+  Username: string;
+  Friend: string;
+  constructor() {
+    this.Username = '';
+    this.Friend = '';
+    
   }
 }
