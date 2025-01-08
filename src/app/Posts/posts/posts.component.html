@@ -1,0 +1,18 @@
+<app-upload-post></app-upload-post>
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    @for (post of posts; track post) {
+    <div class="col">
+        <div class="card h-100">
+            <img src={{post.image}} class="card-img-top" alt="...">
+            <div class="card-body">
+                <h5 class="card-title">{{ post.title }}</h5>
+                <p class="card-text">{{ post.body }}</p>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted">{{ post.date }}</small>
+            </div>
+        </div>
+    </div>
+    }
+</div>
+<p>End</p>

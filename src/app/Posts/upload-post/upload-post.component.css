@@ -1,0 +1,38 @@
+.popup {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    margin: auto;
+    position: absolute;
+    z-index: 2;
+}
+
+.popup form {
+    width: 40%;
+    margin: auto;
+    top: 50%;
+    -ms-transform: translateY(20%);
+    transform: translateY(20%);
+    background: white;
+}
+
+.close {
+    width: 30px;
+    height: 30px;
+    position: absolute;
+    right: 15px;
+    top: 7px;
+    display: inline-block;
+    color: blue;
+    text-align: center;
+    padding: 0;
+}
+
+.upload {
+    height: 100px;
+    margin-top: 20px;
+}
+
+.create {
+    margin: 20px;
+}

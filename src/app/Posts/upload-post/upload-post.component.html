@@ -1,0 +1,28 @@
+<div *ngIf="isOpen">
+    <div class="popup">
+        <form class="border border-black rounded p-3">
+          <div class="mb-3">
+            <a (click)="isOpen = false" type="button" class="btn-close close" aria-label="Close"></a>
+            <div class="d-flex justify-content-between">
+            <label for="title" class="form-label">Title:</label>
+            </div>
+            <input type="text" class="form-control" [(ngModel)]="postObj.Title" name="Title" id="title" minlength="4" required>
+          </div>
+          <div class="mb-3">
+            <label for="body" class="form-label">Body:</label>
+            <textarea type="password" class="form-control" [(ngModel)]="postObj.Body" name="Body" id="body" minlength="4" required></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="image">Image:</label>
+            <input type="file" class="form-control" id="image" (change)="onChange($event)">
+            <img class="upload" src={{url}} onerror='this.src="https://adaptcommunitynetwork.org/wp-content/uploads/2022/01/ef3-placeholder-image.jpg";'>
+          </div>
+          <button type="submit" class="btn btn-primary" (click)="onUpload()">Submit</button>
+        </form>
+      </div>
+</div>
+
+<div class="d-md-flex justify-content-md-end">
+  <button (click)="isOpen = true" class="btn btn-primary create">Create Post</button>
+</div>
+
