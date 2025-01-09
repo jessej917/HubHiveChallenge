@@ -61,7 +61,6 @@ export class PostsComponent implements OnInit {
       this.hw.AddFriend(json).subscribe((res: any) => {
         if (res.result) {
           alert("Friended " + friend)
-          //this.router.navigateByUrl('/dashboard')
         } else {
           alert(res.message)
         }

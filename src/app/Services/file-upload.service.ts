@@ -13,10 +13,8 @@ export class FileUploadService {
   uploadFile(file: File): Observable<any> {
     const formData = new FormData();
     formData.append('image', file, file.name);
-    debugger;
-    var thing = this.httpClient.post(environment.serverUrl + '/uploadImage', formData, {
+    return this.httpClient.post(environment.serverUrl + '/uploadImage', formData, {
       responseType: 'text',
     });
-    return thing;
   }
 }

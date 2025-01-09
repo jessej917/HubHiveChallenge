@@ -22,7 +22,6 @@ export class FriendsListComponent {
     this.hw.getFriends(this.AS.getUser()).subscribe(data => {
       this.friends = data;
     });
-    //console.log(this.title);
 
   }
 
