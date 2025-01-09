@@ -63,10 +63,9 @@ export class UploadPostComponent {
   WriteToDatabase() {
     let json = JSON.stringify(this.postObj)
     this.http.post(environment.serverUrl + '/createPost', json).subscribe((res: any) => {
-      debugger;
       if (res.result) {
         alert("Posted Successfully!")
-        this.router.navigateByUrl('/posts')
+        window.location.reload();
       } else {
         alert(res.message)
       }
