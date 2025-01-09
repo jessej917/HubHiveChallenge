@@ -12,7 +12,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j/dbtype"
 	"github.com/rs/cors"
 )
 
@@ -63,25 +62,16 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 	ctx, driver := ConnectToDatabase()
 	defer driver.Close(ctx)
 
-	// map parameter can be nil
-	// "MATCH (p:User {username: $username}) RETURN p.username AS username",
-	// Get the name of all 42 year-olds
+	// Run Query to get the posts
 	result, _ := neo4j.ExecuteQuery(ctx, driver,
 		"match (u:User) -[c:CREATED]-> (p:Post) return p.title as title, p.body as body, p.image as image, date(c.date) AS date, u.username as username",
 		nil, neo4j.EagerResultTransformer,
 		neo4j.ExecuteQueryWithDatabase("neo4j"))
 
 	posts := []PostRequest{}
-	//listTest := []any{}
 
 	// Loop through results and do something with them
 	for _, record := range result.Records {
-		fmt.Println(record.AsMap())
-		fmt.Println(record.AsMap()["username"])
-		fmt.Println(record.AsMap()["title"])
-		fmt.Println(record.AsMap()["body"])
-		fmt.Println(record.AsMap()["image"])
-		fmt.Println(record.AsMap()["date"])
 		var post = PostRequest{
 			Username: fmt.Sprint(record.AsMap()["username"]),
 			Title:    fmt.Sprint(record.AsMap()["title"]),
@@ -90,19 +80,12 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 			Date:     fmt.Sprint(record.AsMap()["date"]),
 		}
 		posts = append(posts, post)
-		//listTest = append(listTest, record.AsMap()["username"])
 	}
-
-	// For convertion
-	fmt.Printf("Thing: %s\n", posts[0].Date)
-	fmt.Printf("Type of things!: %T\n", posts[0].Date)
 
 	// Summary information
 	fmt.Printf("The query `%v` returned %v records in %+v.\n",
 		result.Summary.Query().Text(), len(result.Records),
 		result.Summary.ResultAvailableAfter())
-
-	fmt.Println(posts)
 
 	jsonBytes, err := utils.StructToJSON(posts)
 	if err != nil {
@@ -194,9 +177,6 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	fmt.Println(result)
-	fmt.Println(result.Result)
-
 	jsonBytes, err := json.Marshal(result)
 	if err != nil {
 		log.Println("Error marshalling JSON:", err)
@@ -255,32 +235,10 @@ func UploadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("working?")
-
-	fmt.Println(fileHeader.Filename)
-
 	// Respond to the client
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "%s", "uploads/"+fileHeader.Filename)
-	// var result = LoginResult{
-	// 	Message: fileHeader.Filename,
-	// 	Result:  false,
-	// }
-
-	// jsonBytes, err := json.Marshal(result)
-	// if err != nil {
-	// 	log.Println("Error marshalling JSON:", err)
-	// 	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// // Print JSON to server logs
-	// log.Println("JSON response:", string(jsonBytes))
-
-	// // Write the JSON response
-	// w.Header().Set("Content-Type", "application/json")
-	// w.Write(jsonBytes)
 }
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
@@ -289,33 +247,17 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	ctx, driver := ConnectToDatabase()
 	defer driver.Close(ctx)
 
-	// map parameter can be nil
-	// "MATCH (p:User {username: $username}) RETURN p.username AS username",
-	// Get the name of all 42 year-olds
+	// Run get users query
 	result, _ := neo4j.ExecuteQuery(ctx, driver,
 		"MATCH (p:User) RETURN p.username AS username",
 		nil, neo4j.EagerResultTransformer,
 		neo4j.ExecuteQueryWithDatabase("neo4j"))
 
-	test := []map[string]any{}
 	listTest := []any{}
 
 	// Loop through results and do something with them
 	for _, record := range result.Records {
-		fmt.Println(record.AsMap())
-		fmt.Println(record.AsMap()["username"])
-		test = append(test, record.AsMap())
 		listTest = append(listTest, record.AsMap()["username"])
-	}
-
-	// For convertion
-	fmt.Printf("Thing: %s\n", test[0]["username"])
-	fmt.Printf("Type of things!: %T\n", test[0]["username"])
-	m, ok := test[0]["username"].(dbtype.Node)
-	if ok {
-		fmt.Println("Conversion successful:", m.Props["username"])
-	} else {
-		fmt.Println("Conversion failed")
 	}
 
 	// Summary information
@@ -357,9 +299,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		ctx, driver := ConnectToDatabase()
 		defer driver.Close(ctx)
 
-		// map parameter can be nil
-		// "MATCH (p:User {username: $username}) RETURN p.username AS username",
-		// Get the name of all 42 year-olds
+		// Run the Create User query
 		result, err := neo4j.ExecuteQuery(ctx, driver,
 			"Create (p:User {username: $username, password: $password}) return p",
 			map[string]any{
@@ -370,13 +310,11 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("test!")
 		if err != nil {
 			fmt.Println("Error: ")
-			//panic(err)
 		}
 
 		fmt.Println(result)
 
 		// Use the err
-		//var loginResult LoginResult
 		if err == nil {
 			loginResult = LoginResult{
 				Message: "Registered successful!",
@@ -404,9 +342,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	fmt.Println(loginResult)
-	fmt.Println(loginResult.Result)
-
 	jsonBytes, err := json.Marshal(loginResult)
 	if err != nil {
 		log.Println("Error marshalling JSON:", err)
@@ -425,18 +360,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 func GetFriends(w http.ResponseWriter, r *http.Request) {
 
 	var username string = r.URL.Query().Get("username")
-	fmt.Println("TEST")
-	fmt.Println(username)
-
-	// Decode the JSON body into the LoginRequest struct
-	// err := json.NewDecoder(r.Body).Decode(&username)
-	// fmt.Println(username)
-	// fmt.Println(err)
-	// if err != nil {
-	// 	http.Error(w, "Invalid request payload", http.StatusBadRequest)
-	// 	return
-	// }
-	// defer r.Body.Close()
 
 	//Create User in database
 	fmt.Println("Connecting to Database from GetFriends...")
@@ -461,15 +384,10 @@ func GetFriends(w http.ResponseWriter, r *http.Request) {
 		summary.ResultAvailableAfter())
 
 	posts := []any{}
-	//listTest := []any{}
 
 	// Loop through results and do something with them
 	for _, record := range databaseResult.Records {
-		fmt.Println(record.AsMap())
-		fmt.Println(record.AsMap()["username"])
-
 		posts = append(posts, record.AsMap()["username"])
-		//listTest = append(listTest, record.AsMap()["username"])
 	}
 
 	jsonBytes, err := utils.StructToJSON(posts)

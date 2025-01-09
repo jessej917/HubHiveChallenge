@@ -31,12 +31,11 @@ export class UploadPostComponent {
     if (this.file) {
       const mimeType = this.file.type;
       if (mimeType.match(/image\/*/) == null) {
-        //this.message = "Only images are supported.";
+        //"Only images are supported."
         return;
       }
 
       const reader = new FileReader();
-      //this.imagePath = files;
       reader.readAsDataURL(this.file);
       reader.onload = (_event) => {
         this.url = reader.result;
