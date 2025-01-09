@@ -53,11 +53,12 @@ export class PostsComponent implements OnInit {
   AddFriend(friend: string) {
     let person: Friend = {
       Username: this.AS.getUser(),
-      Friend: friend
+      Friend: friend,
+      Remove: false
     };
     if (person.Friend != person.Username) {
       let json = JSON.stringify(person)
-      this.http.post(environment.serverUrl + '/addFriend', json).subscribe((res: any) => {
+      this.hw.AddFriend(json).subscribe((res: any) => {
         if (res.result) {
           alert("Friended " + friend)
           //this.router.navigateByUrl('/dashboard')
@@ -88,9 +89,11 @@ export class Post {
 export class Friend {
   Username: string;
   Friend: string;
+  Remove: boolean;
   constructor() {
     this.Username = '';
     this.Friend = '';
+    this.Remove = false;
 
   }
 }

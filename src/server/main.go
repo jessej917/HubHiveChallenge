@@ -502,10 +502,19 @@ func AddFriend(w http.ResponseWriter, r *http.Request) {
 	ctx, driver := ConnectToDatabase()
 	defer driver.Close(ctx)
 
+	fmt.Println("Remove friend: ", friendReq.Remove)
+	var query string = ""
+	if friendReq.Remove {
+		query = `match (u:User {username: $username}) -[f:Friend]- (p:User {username: $friend})
+				delete f`
+	} else {
+		query = `match (u:User {username: $username}), (p:User {username: $friend})
+				where not (u)--(p) and u <> p
+				create (u) -[f:Friend]-> (p)`
+	}
+
 	result, err := neo4j.ExecuteQuery(ctx, driver,
-		`match (u:User {username: $username}), (p:User {username: $friend})
-		where not (u)--(p) and u <> p
-		create (u) -[f:Friend]-> (p)`,
+		query,
 		map[string]any{
 			"username": friendReq.Username,
 			"friend":   friendReq.Friend,
@@ -522,9 +531,16 @@ func AddFriend(w http.ResponseWriter, r *http.Request) {
 	// Use the err
 	//var loginResult LoginResult
 	if err == nil {
-		loginResult = LoginResult{
-			Message: "Added Friend",
-			Result:  true,
+		if friendReq.Remove {
+			loginResult = LoginResult{
+				Message: "Removed Friend",
+				Result:  true,
+			}
+		} else {
+			loginResult = LoginResult{
+				Message: "Added Friend",
+				Result:  true,
+			}
 		}
 		fmt.Println("Success!!")
 	} else {
@@ -650,6 +666,7 @@ type PostRequest struct {
 type FriendRequest struct {
 	Username string `json:"username"`
 	Friend   string `json:"friend"`
+	Remove   bool   `json:"remove"`
 }
 
 type LoginRequest struct {

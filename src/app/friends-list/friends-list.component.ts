@@ -1,6 +1,9 @@
 import { Component } from '@angular/core';
-import { HelloWorldService } from '../hello-world.service';
 import { AuthService } from '../Services/auth.service';
+import { HelloWorldService } from '../hello-world.service';
+import { Friend } from '../Posts/posts/posts.component';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-friends-list',
@@ -13,7 +16,7 @@ import { AuthService } from '../Services/auth.service';
 export class FriendsListComponent {
   friends: any[] = [];
 
-  constructor(private hw: HelloWorldService, private AS: AuthService) { }
+  constructor(private http: HttpClient, private hw: HelloWorldService, private AS: AuthService) { }
 
   ngOnInit() {
     this.hw.getFriends(this.AS.getUser()).subscribe(data => {
@@ -22,4 +25,23 @@ export class FriendsListComponent {
     //console.log(this.title);
 
   }
+
+  RemoveFriend(friend: string) {
+      let person: Friend = {
+        Username: this.AS.getUser(),
+        Friend: friend,
+        Remove: true
+      };
+      if (person.Friend != person.Username) {
+        let json = JSON.stringify(person)
+        this.hw.AddFriend(json).subscribe((res: any) => {
+          if (res.result) {
+            alert("Removed Friend: " + friend)
+            window.location.reload();
+          } else {
+            alert(res.message)
+          }
+        })
+      }
+    }
 }

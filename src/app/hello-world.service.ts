@@ -17,6 +17,10 @@ export class HelloWorldService {
     return this.http.get<any[]>(environment.serverUrl + '/getFriends', { params });
   }
 
+  AddFriend(json:string) {
+    return this.http.post(environment.serverUrl + '/addFriend', json)
+  }
+
   getPosts() {
     return this.http.get<any[]>(environment.serverUrl + '/getPosts');
   }

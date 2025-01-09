@@ -1,6 +1,6 @@
 <h1>Your Friends</h1>
 <ul>
     @for (friend of friends; track friend) {
-    <li>{{ friend }}</li>
+    <li><span>{{ friend }} <a class=".unfriend-link" (click)="RemoveFriend(friend)" >Unfriend</a></span></li>
     }
 </ul>
